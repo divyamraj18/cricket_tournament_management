@@ -36,12 +36,24 @@ try:
 except mdb.Error as e:
 	QMessageBox.about(self, 'Connection', 'Failed To Connect Database')
 	sys.exit(1)
-tuple_team_row=cur.execute("SELECT * FROM TEAM")
-tuple_team_data=cur.fetchall()
-list_team_data=list(tuple_team_data)
+
 
 
 class Ui_MainWindow(object):
+	def init_table(self):
+		self.tuple_team_row=cur.execute("SELECT * FROM TEAM")
+		self.tuple_team_data=cur.fetchall()
+		self.list_team_data=list(self.tuple_team_data)
+		self.teamNameLineEdit.clear()
+		self.displayTeamNameLineEdit.clear()
+		i=0;
+		for ele in self.list_team_data:
+			j=0
+			for item in ele:
+				self.teamsTable.setItem(i,j,QTableWidgetItem(item))
+				j=j+1
+			i=i+1
+		
 	def on_click_add_team(self):
 		#written by divyam
 		#self.setText(self.teamNamelineEdit.text())
@@ -53,9 +65,7 @@ class Ui_MainWindow(object):
 			return
 		cur.execute("INSERT INTO TEAM (TEAM_NAME,DISP_NAME) VALUES('%s','%s')"%(''.join(a),''.join(b)))
 		db.commit()
-		self.teamNameLineEdit.clear()
-		self.displayTeamNameLineEdit.clear()
-
+		self.init_table()
 
 	def openAddMatch(self):
 		##written by Tafzeel
@@ -210,15 +220,6 @@ class Ui_MainWindow(object):
 		self.teamsTable.setObjectName("teamsTable")
 		self.teamsTable.setColumnCount(2)   
 		self.teamsTable.setRowCount(15)
-		i=0;
-		for ele in list_team_data:
-			j=0
-			for item in ele:
-				print(j)
-				self.teamsTable.setItem(i,j,QTableWidgetItem(item))
-				j=j+1
-				print(j)
-			i=i+1
 		self.teamsTable.setGeometry(QtCore.QRect(10, 9, 731, 581))
 		currentrowCount=self.teamsTable.rowCount()
 		self.teamsTable.horizontalHeader().setVisible(False)
@@ -388,6 +389,7 @@ class Ui_MainWindow(object):
 		#
 		####added by divyam
 		self.addTeamButton.clicked.connect(self.on_click_add_team)
+		self.init_table()
 		#
 		self.retranslateUi(MainWindow)
 		self.mainWindowTabWidget.setCurrentIndex(0)
