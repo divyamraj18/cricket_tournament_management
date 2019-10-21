@@ -20,7 +20,7 @@ except mdb.Error as e:
 	QMessageBox.about(self, 'Connection', 'Failed To Connect Database')
 	sys.exit(1)
 
-tuple_team_row=cur.execute("SELECT TEAM_NAME FROM TEAM")
+tuple_team_row=cur.execute("SELECT DISP_NAME FROM TEAM")
 tuple_team_data=cur.fetchall()
 list_team_data=list(tuple_team_data)
 	
@@ -38,6 +38,7 @@ class Ui_Form(object):
 		print(time)
 		cur.execute("INSERT INTO ADDMATCH (HOST_TEAM,OPP_TEAM,MATCH_DATE,MATCH_TIME,OVERS) VALUES('%s','%s','%s','%s','%s')"%(team1,team2,date,time,over))
 		db.commit()
+		#self.init_upcoming_match()
 		self.dateEdit.clear()
 		self.timeEdit.clear()
 

@@ -11,24 +11,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5 import QtSql
 from PyQt5.QtWidgets import QTableWidget,QTableWidgetItem
 import MySQLdb as mdb
-'''    if not db.open():
-        QtWidgets.QMessageBox.critical(None, "Cannot open memory database",
-                             "Unable to establish a database connection.\n\n"
-                             "Click Cancel to exit.", QtWidgets.QMessageBox.Cancel)
-        return False
-    query = QtSql.QSqlQuery()
-    #print (os.listdir("."))
-    query.exec("DROP TABLE IF EXISTS Websites")
-    query.exec("CREATE TABLE Websites (ID INTEGER PRIMARY KEY NOT NULL, " +     "website VARCHAR(20))")
-    query.exec("INSERT INTO Websites (website) VALUES('python-catalin.blogspot.com')")
-    query.exec("INSERT INTO Websites (website) VALUES('catalin-festila.blogspot.com')")
-    query.exec("INSERT INTO Websites (website) VALUES('free-tutorials.org')")
-    query.exec("INSERT INTO Websites (website) VALUES('graphic-3d.blogspot.com')")
-    query.exec("INSERT INTO Websites (website) VALUES('pygame-catalin.blogspot.com')")
-    return True'''
-
-
-
+# written by divyam
+#purpose:database connection
 try:
 	db = mdb.connect('localhost', 'root', 'divpes1998', 'TOURNAMENT')
 	print("database connected")
@@ -40,13 +24,30 @@ except mdb.Error as e:
 
 
 class Ui_MainWindow(object):
+	def init_upcoming_match(self):
+		#written by divyam
+		#purpose :display upcoming matches
+		self.tuple_match_row=cur.execute("SELECT HOST_TEAM,OPP_TEAM,MATCH_DATE,MATCH_TIME FROM ADDMATCH ")
+		self.tuple_match_data=cur.fetchall()
+		self.list_match_data=list(self.tuple_match_data)
+		for ele in self.list_match_data:
+			print(ele)
+		i=0
+		for ele in self.list_match_data:
+			j=0
+			for item in ele:
+				self.upcomingMatchTables.setItem(i,j,QTableWidgetItem(item))
+				j=j+1
+			i=i+1
 	def init_table(self):
+		#written by divyam
+		#purpose:display team names in Qtable widget
 		self.tuple_team_row=cur.execute("SELECT * FROM TEAM")
 		self.tuple_team_data=cur.fetchall()
 		self.list_team_data=list(self.tuple_team_data)
 		self.teamNameLineEdit.clear()
 		self.displayTeamNameLineEdit.clear()
-		i=0;
+		i=0
 		for ele in self.list_team_data:
 			j=0
 			for item in ele:
@@ -56,8 +57,7 @@ class Ui_MainWindow(object):
 		
 	def on_click_add_team(self):
 		#written by divyam
-		#self.setText(self.teamNamelineEdit.text())
-		#self.setText(self.displayteamNamelineEdit.text())
+		#Purpose:to perform insert operation on clicking add team button
 		a=self.teamNameLineEdit.text()
 		b=self.displayTeamNameLineEdit.text()
 		if len(a)==0 or len(b)==0:
@@ -125,8 +125,11 @@ class Ui_MainWindow(object):
 		self.verticalLayout_7.addWidget(self.upcomingLabel)
 		self.upcomingMatchTables = QtWidgets.QTableWidget(self.widget)
 		self.upcomingMatchTables.setObjectName("upcomingMatchTables")
-		self.upcomingMatchTables.setColumnCount(0)
-		self.upcomingMatchTables.setRowCount(0)
+		#########updated by divyam
+		self.upcomingMatchTables.setColumnCount(4)
+		self.upcomingMatchTables.setRowCount(17)
+		self.upcomingMatchTables.setHorizontalHeaderLabels(["Team 1", "Team 2", "Date","Time"])
+		###########`
 		self.upcomingMatchTables.horizontalHeader().setSortIndicatorShown(False)
 		self.upcomingMatchTables.horizontalHeader().setStretchLastSection(False)
 		self.verticalLayout_7.addWidget(self.upcomingMatchTables)
@@ -218,10 +221,17 @@ class Ui_MainWindow(object):
 		self.teamsTable = QtWidgets.QTableWidget(self.layoutWidget2)
 		self.teamsTable.setLayoutDirection(QtCore.Qt.LeftToRight)
 		self.teamsTable.setObjectName("teamsTable")
+		#next 3 llines updated by divyam
 		self.teamsTable.setColumnCount(2)   
-		self.teamsTable.setRowCount(15)
-		self.teamsTable.setGeometry(QtCore.QRect(10, 9, 731, 581))
-		currentrowCount=self.teamsTable.rowCount()
+		self.teamsTable.setRowCount(17)
+		#added by divyam
+		#self.teamsTable.resizeColumnToContents(0)
+		#self.teamsTable.resizeColumnToContents(0)
+		self.teamsTable.setGeometry(QtCore.QRect(10, 9, 1500, 581))
+		self.currentrowCount=self.teamsTable.rowCount()
+		#number of rows and columns
+		
+		
 		self.teamsTable.horizontalHeader().setVisible(False)
 		self.teamsTable.horizontalHeader().setCascadingSectionResizes(False)
 		self.teamsTable.horizontalHeader().setMinimumSectionSize(23)
@@ -384,12 +394,15 @@ class Ui_MainWindow(object):
 		self.gridLayout_2.setColumnStretch(1, 6)
 		self.mainWindowTabWidget.addTab(self.statsTab, "")
 		MainWindow.setCentralWidget(self.centralwidget)
+		self.addMatchButton.clicked.connect(self.init_upcoming_match)
 		####Added by Tafzeel
 		self.addMatchButton.clicked.connect(self.openAddMatch)
+		####Added by divyam
 		#
 		####added by divyam
 		self.addTeamButton.clicked.connect(self.on_click_add_team)
 		self.init_table()
+		self.init_upcoming_match()
 		#
 		self.retranslateUi(MainWindow)
 		self.mainWindowTabWidget.setCurrentIndex(0)
