@@ -11,6 +11,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5 import QtSql
 from PyQt5.QtWidgets import QTableWidget,QTableWidgetItem
 import MySQLdb as mdb
+#from mydesign import *
+import sys
 # written by divyam
 #purpose:database connection
 try:
@@ -30,8 +32,6 @@ class Ui_MainWindow(object):
 		self.tuple_match_row=cur.execute("SELECT HOST_TEAM,OPP_TEAM,MATCH_DATE,MATCH_TIME FROM ADDMATCH ")
 		self.tuple_match_data=cur.fetchall()
 		self.list_match_data=list(self.tuple_match_data)
-		for ele in self.list_match_data:
-			print(ele)
 		i=0
 		for ele in self.list_match_data:
 			j=0
@@ -51,6 +51,7 @@ class Ui_MainWindow(object):
 		for ele in self.list_team_data:
 			j=0
 			for item in ele:
+				#self.teamsTable.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 				self.teamsTable.setItem(i,j,QTableWidgetItem(item))
 				j=j+1
 			i=i+1
@@ -224,8 +225,10 @@ class Ui_MainWindow(object):
 		#next 3 llines updated by divyam
 		self.teamsTable.setColumnCount(2)   
 		self.teamsTable.setRowCount(17)
+		self.teamsTable.setColumnWidth(0, 352)
+		self.teamsTable.setColumnWidth(1, 352)
 		#added by divyam
-		#self.teamsTable.resizeColumnToContents(0)
+		#self.teamsTable.resizeColumnToContents(05
 		#self.teamsTable.resizeColumnToContents(0)
 		self.teamsTable.setGeometry(QtCore.QRect(10, 9, 1500, 581))
 		self.currentrowCount=self.teamsTable.rowCount()
