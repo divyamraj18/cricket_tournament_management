@@ -9,7 +9,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_addPlayer(object):
-    def setupUi(self, addPlayer):
+    def setupUi(self, addPlayer,teamName):
         addPlayer.setObjectName("addPlayer")
         addPlayer.resize(1162, 567)
         addPlayer.setAutoFillBackground(False)
@@ -159,10 +159,6 @@ class Ui_addPlayer(object):
         self.playerNameLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.playerNameLabel.setObjectName("playerNameLabel")
         self.horizontalLayout.addWidget(self.playerNameLabel)
-        self.playerDisplayNameLabel = QtWidgets.QLabel(self.widget)
-        self.playerDisplayNameLabel.setAlignment(QtCore.Qt.AlignCenter)
-        self.playerDisplayNameLabel.setObjectName("playerDisplayNameLabel")
-        self.horizontalLayout.addWidget(self.playerDisplayNameLabel)
         self.verticalLayout_4.addWidget(self.widget)
         self.playerTableWidget = QtWidgets.QTableWidget(self.layoutWidget1)
         self.playerTableWidget.setStyleSheet("background-color: rgb(44, 53, 49);")
@@ -172,6 +168,7 @@ class Ui_addPlayer(object):
         self.verticalLayout_4.addWidget(self.playerTableWidget)
 
         self.retranslateUi(addPlayer)
+        self.teamNameLabel.setText(teamName)
         QtCore.QMetaObject.connectSlotsByName(addPlayer)
 
     def retranslateUi(self, addPlayer):
@@ -193,7 +190,6 @@ class Ui_addPlayer(object):
         self.bowlingStylecomboBox.setItemText(1, _translate("addPlayer", "Left Hand Bowl"))
         self.addPlayerButton.setText(_translate("addPlayer", "Add Player"))
         self.playerNameLabel.setText(_translate("addPlayer", "Player Name"))
-        self.playerDisplayNameLabel.setText(_translate("addPlayer", "DisplayName"))
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@
 #
 # WARNING! All changes made in this file will be lost!
 from addPlayer import Ui_addPlayer
+from startMatch import Ui_startMatch
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5 import QtSql
 from PyQt5.QtWidgets import QTableWidget,QTableWidgetItem
@@ -23,10 +24,34 @@ except mdb.Error as e:
 	sys.exit(1)
 
 class Ui_MainWindow(object):
+	def init_points_table(self):
+		self.rows=cur.execute("SELECT TEAM_NAME,PLAYED,WON,LOST,NORESULT,POINTS FROM TEAM")
+		self.points_data=cur.fetchall()
+		self.points_data_list=list(self.points_data)
+		for i in range(1,21):
+			self.pointsTableWidget.setItem(i-1,0,QTableWidgetItem(str(i)))
+		i=0
+		for ele in self.points_data_list:
+			j=1
+			for item in ele:
+				self.pointsTableWidget.setItem(i,j,QTableWidgetItem(str(item)))
+				j=j+1
+			i=i+1
+			self.pointsTableWidget.setItem(0,2,QTableWidgetItem('0'))
+		self.pointsTableWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+	def init_view_team(self):
+		self.tuple_team_row=cur.execute("SELECT DISP_NAME FROM TEAM")
+		self.tuple_team_data=cur.fetchall()
+		self.list_team_data=list(self.tuple_team_data)
+		self.teamComboBox.clear()
+		for ele in self.list_team_data:
+			for strr in ele:
+				self.teamComboBox.addItem(strr)
+		
 	def init_upcoming_match(self):
 		#written by divyam
 		#purpose :display upcoming matches
-		self.tuple_match_row=cur.execute("SELECT HOST_TEAM,OPP_TEAM,MATCH_DATE,MATCH_TIME FROM ADDMATCH ")
+		self.tuple_match_row=cur.execute("SELECT HOST_TEAM,OPP_TEAM,MATCH_DATE,MATCH_TIME FROM UPCOMING_MATCH ")
 		self.tuple_match_data=cur.fetchall()
 		self.list_match_data=list(self.tuple_match_data)
 		i=0
@@ -36,34 +61,39 @@ class Ui_MainWindow(object):
 				self.upcomingMatchTables.setItem(i,j,QTableWidgetItem(item))
 				j=j+1
 			i=i+1
+		self.upcomingMatchTables.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
 	def on_click_addMatch(self):
 		over=self.oversSpinBox.value()
 		team1=self.team1ComboBox.currentText()
 		team2=self.team2ComboBox.currentText()
 		date=self.dateEdit.text()
 		time=self.timeEdit.text()
-		cur.execute("INSERT INTO ADDMATCH (HOST_TEAM,OPP_TEAM,MATCH_DATE,MATCH_TIME,OVERS) VALUES('%s','%s','%s','%s','%s')"%(team1,team2,date,time,over))
+		cur.execute("INSERT INTO UPCOMING_MATCH (HOST_TEAM,OPP_TEAM,MATCH_DATE,MATCH_TIME,OVERS) VALUES('%s','%s','%s','%s','%s')"%(team1,team2,date,time,over))
 		db.commit()
 		self.init_upcoming_match()
 		self.init_upcoming_combobox()
 	def init_addMatch_Form(self):
 		self.tuple_team_row=cur.execute("SELECT DISP_NAME FROM TEAM")
 		self.tuple_team_data=cur.fetchall()
-		self.list_team_data=list(self.tuple_team_data)
-		for ele in self.list_team_data:
-			for strr in ele:
-				self.team1ComboBox.addItem(strr)
-		for ele in self.list_team_data:
-			for strr in ele:
-				self.team2ComboBox.addItem(strr)
+		self.list_team_data_1=list(self.tuple_team_data)
+		self.list_team_data_1=[ _[0] for _ in self.list_team_data_1]
+		self.team1ComboBox.clear()
+		self.team2ComboBox.clear()
+		for ele in self.list_team_data_1:
+			#for strr in ele:
+			self.team1ComboBox.addItem(ele)
+		for ele in self.list_team_data_1:
+			#for strr in ele:
+			self.team2ComboBox.addItem(ele)
 	def init_upcoming_combobox(self):
 		self.lst=[]
-		self.tuple_upcoming_match_row=cur.execute("SELECT HOST_TEAM,OPP_TEAM FROM ADDMATCH ")
+		self.tuple_upcoming_match_row=cur.execute("SELECT HOST_TEAM,OPP_TEAM FROM UPCOMING_MATCH ")
 		self.tuple_upcoming_match_data=cur.fetchall()
 		self.list_upcoming_match_data=list(self.tuple_upcoming_match_data)
 		for ele in self.list_upcoming_match_data:
 			item=str(ele[0])+" VS "+str(ele[1])
 			self.lst.append(item)
+		self.upcomingMatchComboBox.clear()
 		for ele in self.lst:
 			self.upcomingMatchComboBox.addItem(ele)
 			
@@ -71,7 +101,7 @@ class Ui_MainWindow(object):
 	def init_table(self):
 		#written by divyam
 		#purpose:display team names in Qtable widget
-		self.tuple_team_row=cur.execute("SELECT * FROM TEAM")
+		self.tuple_team_row=cur.execute("SELECT TEAM_NAME,DISP_NAME FROM TEAM")
 		self.tuple_team_data=cur.fetchall()
 		self.list_team_data=list(self.tuple_team_data)
 		self.teamNameLineEdit.clear()
@@ -84,19 +114,33 @@ class Ui_MainWindow(object):
 				self.teamsTable.setItem(i,j,QTableWidgetItem(item))
 				j=j+1
 			i=i+1
-
+		self.teamsTable.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+	def onClickStartMatch(self):
+		#app = QtWidgets.QApplication(sys.argv)
+		self.selectTeam = QtWidgets.QWidget()
+		self.ui = Ui_startMatch()
+		self.ui.setupUi(self.selectTeam)
+		self.selectTeam.show()    
+    
 	def on_click_add_team(self):
 		#written by divyam
 		#Purpose:to perform insert operation on clicking add team button
+		print(self.list_team_data_1)
 		a=self.teamNameLineEdit.text().title()
 		b=self.displayTeamNameLineEdit.text().upper()
 		if len(a)==0 or len(b)==0:
 			print("No Input")
 			return
-		cur.execute("INSERT INTO TEAM (TEAM_NAME,DISP_NAME) VALUES('%s','%s')"%(''.join(a),''.join(b)))
-		db.commit()
+		if b in self.list_team_data_1:
+			print("team already added")
+			return
+		else:
+			cur.execute("INSERT INTO TEAM (TEAM_NAME,DISP_NAME) VALUES('%s','%s')"%(''.join(a),''.join(b)))
+			db.commit()
 		self.init_table()
-
+		self.init_addMatch_Form()
+		self.init_view_team()
+		
 		'''def openAddMatch(self):
 		##written by Tafzeel
 		a=self.teamNameLineEdit.text()
@@ -109,8 +153,11 @@ class Ui_MainWindow(object):
 	def openAddPlayer(self):
 		##written by Tafzeel
 		self.widgets= QtWidgets.QWidget()
+		######################################################################################
+		teamName=self.teamComboBox.currentText()
+		######################################################################################
 		self.ui= Ui_addPlayer()
-		self.ui.setupUi(self.widgets)
+		self.ui.setupUi(self.widgets,teamName)
 		self.widgets.show()
 
 	def setupUi(self, MainWindow):
@@ -354,8 +401,8 @@ class Ui_MainWindow(object):
 		self.teamsTable.setObjectName("teamsTable")
 		self.teamsTable.setColumnCount(2)   
 		self.teamsTable.setRowCount(50)
-		self.teamsTable.setColumnWidth(0, 352)
-		self.teamsTable.setColumnWidth(1, 352)
+		self.teamsTable.setColumnWidth(0, 450)
+		self.teamsTable.setColumnWidth(1, 450)
 		self.teamsTable.horizontalHeader().setVisible(False)
 		self.teamsTable.horizontalHeader().setCascadingSectionResizes(False)
 		self.teamsTable.horizontalHeader().setMinimumSectionSize(23)
@@ -365,6 +412,7 @@ class Ui_MainWindow(object):
 		self.teamComboBox = QtWidgets.QComboBox(self.teamsTab)
 		self.teamComboBox.setGeometry(QtCore.QRect(950, 10, 251, 28))
 		self.teamComboBox.setObjectName("teamComboBox")
+		self.init_view_team()
 		self.viewTeamButton = QtWidgets.QPushButton(self.teamsTab)
 		self.viewTeamButton.setGeometry(QtCore.QRect(1210, 10, 84, 28))
 		self.viewTeamButton.setObjectName("viewTeamButton")
@@ -445,8 +493,21 @@ class Ui_MainWindow(object):
 		self.pointsTableWidget = QtWidgets.QTableWidget(self.pointsTableTab)
 		self.pointsTableWidget.setGeometry(QtCore.QRect(20, 50, 941, 521))
 		self.pointsTableWidget.setObjectName("pointsTableWidget")
-		self.pointsTableWidget.setColumnCount(0)
-		self.pointsTableWidget.setRowCount(0)
+		self.pointsTableWidget.setColumnCount(7)
+		self.pointsTableWidget.setRowCount(20)
+		self.pointsTableWidget.setColumnWidth(0, 63)
+		self.pointsTableWidget.setColumnWidth(1, 405)
+		self.pointsTableWidget.setColumnWidth(2, 92)
+		self.pointsTableWidget.setColumnWidth(3, 92)
+		self.pointsTableWidget.setColumnWidth(4, 92)
+		self.pointsTableWidget.setColumnWidth(5, 92)
+		self.pointsTableWidget.setColumnWidth(6, 92)
+		self.pointsTableWidget.horizontalHeader().setVisible(False)
+		self.pointsTableWidget.horizontalHeader().setCascadingSectionResizes(False)
+		self.pointsTableWidget.horizontalHeader().setMinimumSectionSize(23)
+		self.pointsTableWidget.horizontalHeader().setSortIndicatorShown(False)
+		self.pointsTableWidget.horizontalHeader().setStretchLastSection(False)
+		self.init_points_table()
 		self.mainWindowTabWidget.addTab(self.pointsTableTab, "")
 		self.statsTab = QtWidgets.QWidget()
 		self.statsTab.setObjectName("statsTab")
@@ -543,6 +604,7 @@ class Ui_MainWindow(object):
 		MainWindow.setCentralWidget(self.centralwidget)
 		####Added by Tafzeel
 		self.viewTeamButton.clicked.connect(self.openAddPlayer)
+		self.startMatchButton.clicked.connect(self.onClickStartMatch)
 		#
 		self.init_upcoming_match()
 		self.addTeamButton.clicked.connect(self.on_click_add_team)
