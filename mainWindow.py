@@ -5,7 +5,7 @@
 # Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
-from addPlayer import Ui_addPlayer
+#from addPlayer import Ui_addPlayer
 from viewTeam import Ui_viewTeam
 from startMatch import Ui_startMatch
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -26,6 +26,24 @@ except mdb.Error as e:
 
 
 class Ui_MainWindow(object):
+	'''def refresh_tab2(self):'''
+	def deleteMatch(self):
+		sql="DELETE FROM tblMatches WHERE MatchId=%s"
+		adr=(int(self.upcomingMatchComboBox2.currentText()),)
+		cur.execute(sql,adr)
+		db.commit()
+		self.init_upcoming_match()
+		self.init_upcoming_combobox()
+		
+	def showDialogMatch(self):
+		self.msgBox = QMessageBox()
+		self.msgBox.setIcon(QMessageBox.Warning)
+		self.msgBox.setText("both teams can't be same")
+		self.msgBox.setWindowTitle("warning")
+		self.msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+		#self.msgBox.buttonClicked.connect(msgButtonClick)
+		self.msgBox.show()
+		returnValue = self.msgBox.exec()	
 	def showDialog(self):
 		self.msgBox = QMessageBox()
 		self.msgBox.setIcon(QMessageBox.Warning)
@@ -35,16 +53,10 @@ class Ui_MainWindow(object):
 		#self.msgBox.buttonClicked.connect(msgButtonClick)
 		self.msgBox.show()
 		returnValue = self.msgBox.exec()
-	def delete_team(self):
-		sql="DELETE FROM tblTeams WHERE DisplayName=%s"
-		adr=(str(self.teamComboBox2.currentText()),)
-		cur.execute(sql,adr)
-		db.commit()
-		self.init_view_team()
-		self.init_table()
+	
 		
 	def init_points_table(self):
-		self.rows=cur.execute("SELECT TeamName,Payed,Won,Lost,NoResult,Points FROM tblTeams")
+		self.rows=cur.execute("SELECT TeamName,Played,Won,Lost,NoResult,Points FROM tblTeams order by Points desc")
 		self.points_data=cur.fetchall()
 		self.points_data_list=list(self.points_data)
 		for i in range(1,21):
@@ -56,7 +68,7 @@ class Ui_MainWindow(object):
 				self.pointsTableWidget.setItem(i,j,QTableWidgetItem(str(item)))
 				j=j+1
 			i=i+1
-			self.pointsTableWidget.setItem(0,2,QTableWidgetItem('0'))
+			#self.pointsTableWidget.setItem(0,2,QTableWidgetItem('0'))
 		self.pointsTableWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
 		
 		
@@ -76,14 +88,15 @@ class Ui_MainWindow(object):
 	def init_upcoming_match(self):
 		#written by divyam
 		#purpose :display upcoming matches
-		self.tuple_match_row=cur.execute("SELECT Team1,Team2,Date,Time FROM tblMatches ")
+		self.upcomingMatchTables.clear()
+		self.tuple_match_row=cur.execute("SELECT MatchId,Team1,Team2,Date,Time FROM tblMatches where Status='UpComing'")
 		self.tuple_match_data=cur.fetchall()
 		self.list_match_data=list(self.tuple_match_data)
 		i=0
 		for ele in self.list_match_data:
 			j=0
 			for item in ele:
-				self.upcomingMatchTables.setItem(i,j,QTableWidgetItem(item))
+				self.upcomingMatchTables.setItem(i,j,QTableWidgetItem(str(item)))
 				j=j+1
 			i=i+1
 		self.upcomingMatchTables.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
@@ -93,9 +106,13 @@ class Ui_MainWindow(object):
 		over=self.oversSpinBox.value()
 		team1=self.team1ComboBox.currentText()
 		team2=self.team2ComboBox.currentText()
-		date=self.dateEdit.text()
+		date=self.dateEdit.date()
+		self.date=date.toPyDate()
 		time=self.timeEdit.text()
-		cur.execute("INSERT INTO tblMatches (Team1,Team2,Date,Time,Overs) VALUES('%s','%s','%s','%s','%d')"%(team1,team2,date,time,over))
+		if(team1==team2):
+			self.showDialogMatch()
+			return
+		cur.execute("INSERT INTO tblMatches (Team1,Team2,Date,Time,Overs) VALUES('%s','%s','%s','%s','%d')"%(team1,team2,self.date,time,over))
 		db.commit()
 		self.init_upcoming_match()
 		self.init_upcoming_combobox()
@@ -119,20 +136,27 @@ class Ui_MainWindow(object):
 			
 	def init_upcoming_combobox(self):
 		self.lst=[]
-		self.tuple_upcoming_match_row=cur.execute("SELECT Team1,Team2 FROM tblMatches ")
+		self.lst1=[]
+		self.tuple_upcoming_match_row=cur.execute("SELECT MatchId FROM tblMatches where Status='UpComing'")
 		self.tuple_upcoming_match_data=cur.fetchall()
 		self.list_upcoming_match_data=list(self.tuple_upcoming_match_data)
 		for ele in self.list_upcoming_match_data:
-			item=str(ele[0])+" VS "+str(ele[1])
+			item=str(ele[0])
+			item1=str(ele[0])
 			self.lst.append(item)
+			self.lst1.append(item1)
 		self.upcomingMatchComboBox.clear()
+		self.upcomingMatchComboBox2.clear()
 		for ele in self.lst:
 			self.upcomingMatchComboBox.addItem(ele)
+		for ele in self.lst1:
+			self.upcomingMatchComboBox2.addItem(ele)
 			
 		
 	def init_table(self):
 		#written by divyam
 		#purpose:display team names in Qtable widget
+		self.teamsTable.clear()
 		self.tuple_team_row=cur.execute("SELECT TeamName,DisplayName FROM tblTeams")
 		self.tuple_team_data=cur.fetchall()
 		self.list_team_data=list(self.tuple_team_data)
@@ -150,13 +174,8 @@ class Ui_MainWindow(object):
 		
 	def onClickStartMatch(self):
 		#app = QtWidgets.QApplication(sys.argv)
+		
 		self.selectTeam = QtWidgets.QWidget()
-		combobox_value=self.upcomingMatchComboBox.currentText()
-		new=re.sub("VS","",combobox_value)
-		#print(combobox_value)
-		#print(new)
-		lis1=new.split()
-		#print(lis1)
 		self.ui = Ui_startMatch()
 		self.ui.setupUi(self.selectTeam,lis1)
 		self.selectTeam.show()    
@@ -185,16 +204,6 @@ class Ui_MainWindow(object):
 		self.init_table()
 		self.init_addMatch_Form()
 		self.init_view_team()
-		
-		'''def openAddMatch(self):
-		##written by Tafzeel
-		a=self.teamNameLineEdit.text()
-		print(a)
-		self.widgets= QtWidgets.QWidget()
-		self.ui= Ui_Form()
-		self.ui.setupUi(self.widgets)
-		self.widgets.show()'''
-
 
 	def onClickViewTeam(self):
 		##written by Tafzeel
@@ -205,13 +214,31 @@ class Ui_MainWindow(object):
 		self.ui= Ui_viewTeam()
 		self.ui.setupUi(self.widgets,teamName)
 		self.widgets.show()
-
+		self.init_table()
+		self.init_addMatch_Form()
+		self.init_view_team()
 	def onClickStartMatch(self):
 		##written by Tafzeel
+		
+		sql="SELECT MatchId,Team1,Team2 from tblMatches WHERE MatchId=%s"
+		adr=(int(self.upcomingMatchComboBox.currentText()),)
+		cur.execute(sql,adr)
+		data=cur.fetchall()
+		print(data)
 		self.widgets= QtWidgets.QWidget()
 		self.ui= Ui_startMatch()
-		self.ui.setupUi(self.widgets)
+		self.ui.setupUi(self.widgets,data)
 		self.widgets.show()
+	def delete_team(self):
+		sql="DELETE FROM tblTeams WHERE DisplayName=%s"
+		adr=(str(self.teamComboBox2.currentText()),)
+		cur.execute(sql,adr)
+		db.commit()
+		self.init_table()
+		self.init_addMatch_Form()
+		self.init_view_team()
+		self.init_upcoming_match()
+		self.init_upcoming_combobox()
 
 	def setupUi(self, MainWindow):
 		MainWindow.setObjectName("MainWindow")
@@ -246,9 +273,16 @@ class Ui_MainWindow(object):
 		self.upcomingMatchTables = QtWidgets.QTableWidget(self.layoutWidget)
 		self.upcomingMatchTables.setObjectName("upcomingMatchTables")
 		################################################
-		self.upcomingMatchTables.setColumnCount(4)
+		self.upcomingMatchTables.setColumnCount(5)
 		self.upcomingMatchTables.setRowCount(50)
-		self.upcomingMatchTables.setHorizontalHeaderLabels(["Team 1", "Team 2", "Date","Time"])
+		self.upcomingMatchTables.horizontalHeader().setVisible(False)
+		self.upcomingMatchTables.setHorizontalHeaderLabels(["matchid","team1","team2","date","time"])
+		self.upcomingMatchTables.setColumnWidth(0, 30)
+		self.upcomingMatchTables.setColumnWidth(1, 90)
+		self.upcomingMatchTables.setColumnWidth(2, 90)
+		self.upcomingMatchTables.setColumnWidth(3, 90)
+		self.upcomingMatchTables.setColumnWidth(4, 90)
+		
 		###########################################
 		self.upcomingMatchTables.horizontalHeader().setSortIndicatorShown(False)
 		self.upcomingMatchTables.horizontalHeader().setStretchLastSection(False)
@@ -284,7 +318,9 @@ class Ui_MainWindow(object):
 		self.upcomingMatchComboBox.setGeometry(QtCore.QRect(910, 20, 381, 28))
 		self.upcomingMatchComboBox.setCurrentText("")
 		self.upcomingMatchComboBox.setObjectName("upcomingMatchComboBox")
-		self.init_upcoming_combobox()
+		#########################################################################################
+		
+		###################################################################################################
 		self.completedMatchComboBox = QtWidgets.QComboBox(self.matchesTab)
 		self.completedMatchComboBox.setGeometry(QtCore.QRect(910, 110, 381, 28))
 		self.completedMatchComboBox.setCurrentText("")
@@ -389,8 +425,12 @@ class Ui_MainWindow(object):
 		self.upcomingMatchComboBox2.setObjectName("upcomingMatchComboBox2")
 		self.deleteMatchButton = QtWidgets.QPushButton(self.matchesTab)
 		self.deleteMatchButton.setGeometry(QtCore.QRect(1170, 240, 121, 28))
-		self.deleteMatchButton.setStyleSheet("background-color: rgb(17, 100, 102); color: rgb(31, 40, 51);")
+		self.deleteMatchButton.setStyleSheet("background-color: rgb(204, 0, 0); color: rgb(31, 40, 51);")
 		self.deleteMatchButton.setObjectName("deleteMatchButton")
+		self.refreshButton1 = QtWidgets.QToolButton(self.matchesTab)
+		self.refreshButton1.setGeometry(QtCore.QRect(1230, 580, 61, 21))
+		self.refreshButton1.setStyleSheet("")
+		self.refreshButton1.setObjectName("refreshButton1")
 		self.mainWindowTabWidget.addTab(self.matchesTab, "")
 		self.teamsTab = QtWidgets.QWidget()
 		self.teamsTab.setObjectName("teamsTab")
@@ -482,7 +522,11 @@ class Ui_MainWindow(object):
 		self.teamComboBox2.setObjectName("teamComboBox2")
 		self.deleteTeamButton = QtWidgets.QPushButton(self.teamsTab)
 		self.deleteTeamButton.setGeometry(QtCore.QRect(1193, 60, 101, 28))
+		self.deleteTeamButton.setStyleSheet("background-color: rgb(204, 0, 0); color: rgb(31, 40, 51);")
 		self.deleteTeamButton.setObjectName("deleteTeamButton")
+		self.refreshButton2 = QtWidgets.QToolButton(self.teamsTab)
+		self.refreshButton2.setGeometry(QtCore.QRect(1230, 580, 61, 21))
+		self.refreshButton2.setObjectName("refreshButton2")
 		self.mainWindowTabWidget.addTab(self.teamsTab, "")
 		self.tab = QtWidgets.QWidget()
 		self.tab.setObjectName("tab")
@@ -943,6 +987,13 @@ class Ui_MainWindow(object):
 		self.bowlingBest.setObjectName("bowlingBest")
 		self.gridLayout_6.addWidget(self.bowlingBest, 6, 1, 1, 1)
 		self.horizontalLayout_3.addWidget(self.groupBox_2)
+		self.refreshbutton3 = QtWidgets.QToolButton(self.widget)
+		self.refreshbutton3.setGeometry(QtCore.QRect(1230, 580, 61, 21))
+		self.refreshbutton3.setObjectName("refreshbutton3")
+		self.deletePlayerButton = QtWidgets.QPushButton(self.widget)
+		self.deletePlayerButton.setGeometry(QtCore.QRect(993, 287, 291, 41))
+		self.deletePlayerButton.setStyleSheet("background-color: rgb(204, 0, 0); color: rgb(31, 40, 51);")
+		self.deletePlayerButton.setObjectName("deletePlayerButton")
 		self.mainWindowTabWidget.addTab(self.tab, "")
 		self.pointsTableTab = QtWidgets.QWidget()
 		self.pointsTableTab.setObjectName("pointsTableTab")
@@ -1020,8 +1071,19 @@ class Ui_MainWindow(object):
 		self.pointsTableWidget = QtWidgets.QTableWidget(self.pointsTableTab)
 		self.pointsTableWidget.setGeometry(QtCore.QRect(20, 50, 941, 551))
 		self.pointsTableWidget.setObjectName("pointsTableWidget")
-		self.pointsTableWidget.setColumnCount(0)
-		self.pointsTableWidget.setRowCount(0)
+		self.pointsTableWidget.setColumnCount(7)
+		self.pointsTableWidget.setRowCount(20)
+		self.pointsTableWidget.setColumnWidth(0, 64)
+		self.pointsTableWidget.setColumnWidth(1, 400)
+		self.pointsTableWidget.setColumnWidth(2, 95)
+		self.pointsTableWidget.setColumnWidth(3, 91)
+		self.pointsTableWidget.setColumnWidth(4, 93)
+		self.pointsTableWidget.setColumnWidth(5, 91)
+		self.pointsTableWidget.setColumnWidth(6, 84)
+		self.pointsTableWidget.horizontalHeader().setVisible(False)
+		self.refreshButton4 = QtWidgets.QToolButton(self.pointsTableTab)
+		self.refreshButton4.setGeometry(QtCore.QRect(1230, 580, 61, 21))
+		self.refreshButton4.setObjectName("refreshButton4")
 		self.mainWindowTabWidget.addTab(self.pointsTableTab, "")
 		self.statsTab = QtWidgets.QWidget()
 		self.statsTab.setObjectName("statsTab")
@@ -1271,14 +1333,19 @@ class Ui_MainWindow(object):
 		self.viewTeamButton.clicked.connect(self.onClickViewTeam)
 		self.startMatchButton.clicked.connect(self.onClickStartMatch)
 		#
+		self.init_points_table()
+		self.init_upcoming_combobox()
 		self.init_view_team()
 		self.addMatchButton.clicked.connect(self.on_click_addMatch)
 		self.addTeamButton.clicked.connect(self.on_click_add_team)
 		self.init_upcoming_match()
 		self.init_table()
+		self.refreshButton2.clicked.connect(self.init_table)
 		self.retranslateUi(MainWindow)
 		self.mainWindowTabWidget.setCurrentIndex(0)
 		self.deleteTeamButton.clicked.connect(self.delete_team)
+		self.deleteMatchButton.clicked.connect(self.deleteMatch)
+		
 		QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
 	def retranslateUi(self, MainWindow):
@@ -1399,6 +1466,11 @@ class Ui_MainWindow(object):
 		self.playerName_5.setText(_translate("MainWindow", "MS Dhoni"))
 		self.value_5.setText(_translate("MainWindow", "101m"))
 		self.teamName_5.setText(_translate("MainWindow", "(CSK)"))
+		self.deletePlayerButton.setText(_translate("MainWindow","Delete Player"))
+		self.refreshButton1.setText(_translate("MainWindow", "Refresh"))
+		self.refreshButton2.setText(_translate("MainWindow", "Refresh"))
+		self.refreshbutton3.setText(_translate("MainWindow", "Refresh"))
+		self.refreshButton4.setText(_translate("MainWindow", "Refresh"))
 		self.mainWindowTabWidget.setTabText(self.mainWindowTabWidget.indexOf(self.statsTab), _translate("MainWindow", "Stats"))
 
 

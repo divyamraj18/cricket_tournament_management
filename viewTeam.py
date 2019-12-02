@@ -47,9 +47,8 @@ class Ui_viewTeam(object):
 			self.teamNameLabel.setText(self.teamName)
 			db.commit()
 		self.set_team_label()	
-		'''self.init_table()
-		self.init_addMatch_Form()
-		self.init_view_team()'''
+		
+
 		
 	def set_team_label(self):
 		sql = "SELECT Captain,WicketKeeper FROM tblTeams WHERE DisplayName=%s"
